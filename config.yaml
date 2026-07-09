@@ -1,0 +1,31 @@
+dna:
+  promoter_upstream: 2000
+  promoter_downstream: 500
+  delta_cutoff: 0.20
+  min_cpg_sites: 3
+
+m6a:
+  prob_threshold: 0.90
+  min_reads_per_condition: 20
+  delta_mod_ratio_cutoff: 0.10
+
+isoform:
+  dif_cutoff: 0.10
+  q_value_cutoff: 0.05
+
+expression:
+  log2fc_cutoff: 1.0
+  padj_cutoff: 0.05
+
+overlap:
+  dna_window: 2000
+
+scoring:
+  strong: 6.0
+  moderate: 4.0
+  weak: 2.0
+  direction_multiplier: 1.5
+
+sensitivity:
+  dna_delta: [0.10, 0.15, 0.20, 0.25, 0.30]
+  m6a_delta: [0.05, 0.10, 0.15, 0.20]
