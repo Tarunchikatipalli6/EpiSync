@@ -5,38 +5,40 @@ import pandas as pd
 from episync.config import Config
 
 
-def classify_expression(
-    expr_df: pd.DataFrame,
-    config: Config,
-) -> pd.DataFrame:
+def classify_expression(expr_df: pd.DataFrame, config: Config) -> pd.DataFrame:
+    """Classify DESeq2 expression outputs into UP/DOWN/UNCHANGED.
+
+    Rules:
+      padj < cutoff AND log2FC > +fc_cutoff -> UPREGULATED
+      padj < cutoff AND log2FC < -fc_cutoff -> DOWNREGULATED
+      else -> UNCHANGED
+
+    Returns one row per gene:
+      gene_id, log2FC, padj, expression_status
     """
-    Filter and classify expression changes:
-    padj < padj_cutoff AND log2FC > +fc_cutoff  -> UPREGULATED
-    padj < padj_cutoff AND log2FC < -fc_cutoff  -> DOWNREGULATED
-    else                                         -> UNCHANGED
+    if expr_df.empty:
+        return pd.DataFrame(columns=["gene_id", "log2FC", "padj", "expression_status"])
 
-    CARRY THE CONTINUOUS log2FC FORWARD.
-    The label is for display only.
+    df = expr_df.copy()
 
-    Args:
-        expr_df: expression dataframe with gene_id, log2FC, padj
-        config: Config object
+    # Standardize expected DESeq2 names if needed
+    if "log2FC" not in df.columns and "log2FoldChange" in df.columns:
+        df = df.rename(columns={"log2FoldChange": "log2FC"})
 
-    Returns:
-        dataframe with log2FC, padj, expression_status columns
-    """
-    result = expr_df[["gene_id", "log2FC", "padj"]].copy()
+    required = {"gene_id", "log2FC", "padj"}
+    missing = required.difference(df.columns)
+    if missing:
+        raise ValueError(f"Expression dataframe missing required columns: {sorted(missing)}")
 
-    def classify(row):
-        if pd.isna(row["padj"]) or pd.isna(row["log2FC"]):
-            return "UNCHANGED"
-        if row["padj"] < config.expr_padj_cutoff:
-            if row["log2FC"] > config.expr_log2fc_cutoff:
-                return "UPREGULATED"
-            elif row["log2FC"] < -config.expr_log2fc_cutoff:
-                return "DOWNREGULATED"
-        return "UNCHANGED"
+    fc_cutoff = float(config.expr_log2fc_cutoff)
+    padj_cutoff = float(config.expr_padj_cutoff)
 
-    result["expression_status"] = result.apply(classify, axis=1)
+    significant = df["padj"] < padj_cutoff
+    up = significant & (df["log2FC"] > fc_cutoff)
+    down = significant & (df["log2FC"] < -fc_cutoff)
 
-    return result
+    df["expression_status"] = "UNCHANGED"
+    df.loc[up, "expression_status"] = "UPREGULATED"
+    df.loc[down, "expression_status"] = "DOWNREGULATED"
+
+    return df[["gene_id", "log2FC", "padj", "expression_status"]].copy()
