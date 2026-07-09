@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "episync"
+version = "0.1.0"
+description = "Multiomics biomarker discovery integrating DNA 5mC methylation, RNA m6A modification, isoform switching, and gene expression across conditions in the same tissue."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "pandas>=2.0",
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "pyranges>=0.0.129",
+  "matplotlib>=3.7",
+  "seaborn>=0.12",
+  "plotly>=5.14",
+  "gseapy>=1.0",
+  "typer>=0.9",
+  "streamlit>=1.28",
+  "pyyaml>=6.0",
+  "pytest>=7.0",
+]
+
+[project.scripts]
+episync = "episync.cli:app"
